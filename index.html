@@ -225,7 +225,7 @@
             }
         }
 
-    function poblarCategorias() {
+        function poblarCategorias() {
             const selector = document.getElementById('selector-categoria');
             
             // Eliminamos el .sort() final para que el menú desplegable
@@ -240,7 +240,7 @@
             });
         }
 
-  function filtrarPiezas() {
+        function filtrarPiezas() {
             const textoBusqueda = document.getElementById('buscador').value.toLowerCase();
             const categoriaSeleccionada = document.getElementById('selector-categoria').value;
 
@@ -322,6 +322,7 @@
             // Calculamos hasta dónde tenemos que dibujar en esta pasada
             const limite = Math.min(indiceRenderizado + TAMANO_LOTE, piezasActualesVisibles.length);
             
+            // AQUÍ ESTÁN LOS ESPACIOS AÑADIDOS EN EL BUCLE FOR
             for (let i = indiceRenderizado; i < limite; i++) {
                 const pieza = piezasActualesVisibles[i];
                 const tarjeta = document.createElement('div');
@@ -359,7 +360,7 @@
             contenedor.appendChild(fragmento);
             indiceRenderizado = limite;
             
-            // Si quedan piezas por dibujar, colocamos el vigilante en la última tarjeta
+            // AQUÍ ESTÁ EL ESPACIO AÑADIDO EN EL IF
             if (indiceRenderizado < piezasActualesVisibles.length) {
                 const ultimoElemento = contenedor.lastElementChild;
                 observadorScroll = new IntersectionObserver((entradas) => {
