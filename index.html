@@ -322,7 +322,7 @@
             // Calculamos hasta dónde tenemos que dibujar en esta pasada
             const limite = Math.min(indiceRenderizado + TAMANO_LOTE, piezasActualesVisibles.length);
             
-            for (let i = indiceRenderizado; i <limite; i++) {
+            for (let i = indiceRenderizado; i < limite; i++) {
                 const pieza = piezasActualesVisibles[i];
                 const tarjeta = document.createElement('div');
                 tarjeta.className = 'pieza-card';
@@ -360,7 +360,7 @@
             indiceRenderizado = limite;
             
             // Si quedan piezas por dibujar, colocamos el vigilante en la última tarjeta
-            if (indiceRenderizado <piezasActualesVisibles.length) {
+            if (indiceRenderizado < piezasActualesVisibles.length) {
                 const ultimoElemento = contenedor.lastElementChild;
                 observadorScroll = new IntersectionObserver((entradas) => {
                     if (entradas[0].isIntersecting) {
