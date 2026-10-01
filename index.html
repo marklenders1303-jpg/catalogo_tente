@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Parts Catalog - Multibricks3D</title>
+    <title>TENTE Parts Catalog - Multibricks3D</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@500&display=swap');
 
@@ -159,7 +159,7 @@
             <option value="en" selected>English</option>
             <option value="es">Español</option>
         </select>
-        <h2 id="titulo-web">Parts Catalog</h2>
+        <h2 id="titulo-web">TENTE Parts Catalog</h2>
         
         <div class="controles-busqueda">
             <select id="selector-categoria" class="selector-categoria">
@@ -176,14 +176,14 @@
 
         const traducciones = {
             en: {
-                titulo: "Parts Catalog",
+                titulo: "TENTE Parts Catalog",
                 placeholder: "Search by part name or number...",
                 vacio: "No parts found matching that criteria.",
                 error: "Error loading the catalog.",
                 todas: "All Categories"
             },
             es: {
-                titulo: "Catálogo de Piezas",
+                titulo: "Catálogo de Piezas TENTE",
                 placeholder: "Buscar por nombre o número de pieza...",
                 vacio: "No se han encontrado piezas con ese criterio.",
                 error: "Error al cargar el catálogo.",
@@ -207,6 +207,7 @@
 
         async function cargarGlosario() {
             try {
+                // Archivo JSON de TENTE
                 const respuesta = await fetch('piezas_tente.json');
                 todasLasPiezas = await respuesta.json();
                 
@@ -254,13 +255,24 @@
         document.getElementById('buscador').addEventListener('input', filtrarPiezas);
         document.getElementById('selector-categoria').addEventListener('change', filtrarPiezas);
 
+        // --- SISTEMA DE CARGA PROGRESIVA (LAZY LOAD) ---
+        let observadorScroll;
+        let piezasActualesVisibles = [];
+        let indiceRenderizado = 0;
+        const TAMANO_LOTE = 30; // Dibuja de 30 en 30
+
         function renderizarPiezas(piezas) {
             const contenedor = document.getElementById('contenedor-piezas');
             contenedor.innerHTML = ''; 
             
-            const idiomaActual = document.getElementById('idioma').value;
+            piezasActualesVisibles = piezas;
+            indiceRenderizado = 0;
+            
+            // Apagamos el observador anterior si existía
+            if (observadorScroll) observadorScroll.disconnect();
 
             if (piezas.length === 0) {
+                const idiomaActual = document.getElementById('idioma').value;
                 const pVacio = document.createElement('p');
                 pVacio.className = 'mensaje-vacio';
                 pVacio.textContent = traducciones[idiomaActual].vacio;
@@ -268,24 +280,31 @@
                 return;
             }
 
-            const fragmento = document.createDocumentFragment();
+            cargarMasPiezas(); // Arrancamos el primer lote
+        }
 
-            piezas.forEach(pieza => {
+        function cargarMasPiezas() {
+            const contenedor = document.getElementById('contenedor-piezas');
+            const fragmento = document.createDocumentFragment();
+            
+            // Calculamos hasta dónde tenemos que dibujar en esta pasada
+            const limite = Math.min(indiceRenderizado + TAMANO_LOTE, piezasActualesVisibles.length);
+            
+            for (let i = indiceRenderizado; i <limite; i++) {
+                const pieza = piezasActualesVisibles[i];
                 const tarjeta = document.createElement('div');
                 tarjeta.className = 'pieza-card';
-                tarjeta.style.cursor = 'pointer'; // Añade el cursor de mano
+                tarjeta.style.cursor = 'pointer'; 
                 
-                // --- NUEVO: Enviamos el ID al hacer clic ---
+                // --- AVISO AL PROGRAMA: PIEZA DE TENTE ---
                 tarjeta.addEventListener('click', () => {
-                  window.parent.postMessage({ action: 'cargarPieza', id: pieza.id, sistema: 'tente' }, '*');
+                    window.parent.postMessage({ action: 'cargarPieza', id: pieza.id, sistema: 'tente' }, '*');
                 });
-                // ------------------------------------------
 
                 const imagenElemento = document.createElement('img');
                 imagenElemento.src = pieza.imagen;
-                /* ...resto de tu código de la tarjeta intacto... */
                 imagenElemento.alt = pieza.nombre;
-                imagenElemento.setAttribute('loading', 'lazy');
+                imagenElemento.setAttribute('loading', 'lazy'); // Clave para ahorrar memoria y red
                 imagenElemento.width = 150;
                 imagenElemento.height = 150;
                 
@@ -303,9 +322,22 @@
                 tarjeta.appendChild(nombreElemento);
                 
                 fragmento.appendChild(tarjeta);
-            });
+            }
             
             contenedor.appendChild(fragmento);
+            indiceRenderizado = limite;
+            
+            // Si quedan piezas por dibujar, colocamos el vigilante en la última tarjeta
+            if (indiceRenderizado <piezasActualesVisibles.length) {
+                const ultimoElemento = contenedor.lastElementChild;
+                observadorScroll = new IntersectionObserver((entradas) => {
+                    if (entradas[0].isIntersecting) {
+                        observadorScroll.unobserve(ultimoElemento);
+                        cargarMasPiezas();
+                    }
+                }, { rootMargin: '200px' }); // Avisa un poco antes de llegar al final para cargar suavemente
+                observadorScroll.observe(ultimoElemento);
+            }
         }
 
         cargarGlosario();
