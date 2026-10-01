@@ -225,9 +225,12 @@
             }
         }
 
-        function poblarCategorias() {
+    function poblarCategorias() {
             const selector = document.getElementById('selector-categoria');
-            const categoriasUnicas = [...new Set(todasLasPiezas.map(p => p.categoria))].filter(c => c).sort();
+            
+            // Eliminamos el .sort() final para que el menú desplegable
+            // mantenga exactamente el orden original de tu archivo .json
+            const categoriasUnicas = [...new Set(todasLasPiezas.map(p => p.categoria))].filter(c => c);
             
             categoriasUnicas.forEach(cat => {
                 const opcion = document.createElement('option');
@@ -237,10 +240,11 @@
             });
         }
 
-        function filtrarPiezas() {
+  function filtrarPiezas() {
             const textoBusqueda = document.getElementById('buscador').value.toLowerCase();
             const categoriaSeleccionada = document.getElementById('selector-categoria').value;
 
+            // 1. Fase de filtrado amplio (mantenemos .includes para no ocultar piezas a mitad de palabra)
             const piezasFiltradas = todasLasPiezas.filter(pieza => {
                 const coincideTexto = pieza.id.toLowerCase().includes(textoBusqueda) || 
                                       pieza.nombre.toLowerCase().includes(textoBusqueda);
@@ -248,6 +252,34 @@
                 
                 return coincideTexto && coincideCategoria;
             });
+            
+            // 2. Fase de posicionamiento inteligente (Prioridades)
+            if (textoBusqueda !== '') {
+                piezasFiltradas.sort((a, b) => {
+                    const idA = a.id.toLowerCase();
+                    const idB = b.id.toLowerCase();
+                    const nombreA = a.nombre.toLowerCase();
+                    const nombreB = b.nombre.toLowerCase();
+                    
+                    // Prioridad 1: Coincidencia exacta del ID (El resultado que buscas se clava en la posición 1)
+                    if (idA === textoBusqueda && idB !== textoBusqueda) return -1;
+                    if (idB === textoBusqueda && idA !== textoBusqueda) return 1;
+                    
+                    // Prioridad 2: El ID empieza exactamente por el texto tecleado
+                    const empiezaA = idA.startsWith(textoBusqueda);
+                    const empiezaB = idB.startsWith(textoBusqueda);
+                    if (empiezaA && !empiezaB) return -1;
+                    if (!empiezaA && empiezaB) return 1;
+                    
+                    // Prioridad 3: El nombre de la pieza empieza por el texto tecleado
+                    const nomEmpiezaA = nombreA.startsWith(textoBusqueda);
+                    const nomEmpiezaB = nombreB.startsWith(textoBusqueda);
+                    if (nomEmpiezaA && !nomEmpiezaB) return -1;
+                    if (!nomEmpiezaA && nomEmpiezaB) return 1;
+                    
+                    return 0; // Si tienen la misma prioridad, mantienen su orden natural
+                });
+            }
             
             renderizarPiezas(piezasFiltradas);
         }
